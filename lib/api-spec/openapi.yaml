@@ -1,0 +1,540 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Sun Proactive - Volunteer Matching Platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: volunteers
+    description: Volunteer management
+  - name: tasks
+    description: Task management
+  - name: matches
+    description: Volunteer-task matching
+  - name: chat
+    description: AI chatbot for task creation
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /volunteers:
+    get:
+      operationId: listVolunteers
+      tags: [volunteers]
+      summary: List all volunteers
+      responses:
+        "200":
+          description: List of volunteers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Volunteer"
+    post:
+      operationId: createVolunteer
+      tags: [volunteers]
+      summary: Register a new volunteer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVolunteerRequest"
+      responses:
+        "201":
+          description: Volunteer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Volunteer"
+
+  /volunteers/{id}:
+    get:
+      operationId: getVolunteer
+      tags: [volunteers]
+      summary: Get a volunteer by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Volunteer details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Volunteer"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateVolunteer
+      tags: [volunteers]
+      summary: Update a volunteer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVolunteerRequest"
+      responses:
+        "200":
+          description: Volunteer updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Volunteer"
+
+  /tasks:
+    get:
+      operationId: listTasks
+      tags: [tasks]
+      summary: List all tasks
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, in_progress, completed, cancelled]
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a new volunteer task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskRequest"
+      responses:
+        "201":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    get:
+      operationId: getTask
+      tags: [tasks]
+      summary: Get a task by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateTaskStatus
+      tags: [tasks]
+      summary: Update task status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskStatusRequest"
+      responses:
+        "200":
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}/matches:
+    get:
+      operationId: getTaskMatches
+      tags: [matches]
+      summary: Get volunteers matched to a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Matched volunteers with scores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VolunteerMatch"
+
+  /matches:
+    get:
+      operationId: listMatches
+      tags: [matches]
+      summary: List all matches
+      responses:
+        "200":
+          description: List of all matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Match"
+    post:
+      operationId: createMatch
+      tags: [matches]
+      summary: Assign a volunteer to a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMatchRequest"
+      responses:
+        "201":
+          description: Match created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Match"
+
+  /chat:
+    post:
+      operationId: chatMessage
+      tags: [chat]
+      summary: Send a message to the AI task creation chatbot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: AI response with optional task data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    Volunteer:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        skills:
+          type: array
+          items:
+            type: string
+        availability:
+          type: string
+          enum: [weekdays, weekends, evenings, flexible]
+        location:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        totalHours:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - skills
+        - availability
+        - totalHours
+        - createdAt
+
+    CreateVolunteerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        skills:
+          type: array
+          items:
+            type: string
+        availability:
+          type: string
+          enum: [weekdays, weekends, evenings, flexible]
+        location:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+      required:
+        - name
+        - email
+        - skills
+        - availability
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        requiredSkills:
+          type: array
+          items:
+            type: string
+        location:
+          type: string
+          nullable: true
+        date:
+          type: string
+          nullable: true
+        duration:
+          type: integer
+          description: Duration in hours
+          nullable: true
+        volunteersNeeded:
+          type: integer
+        status:
+          type: string
+          enum: [open, in_progress, completed, cancelled]
+        coordinatorName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - description
+        - requiredSkills
+        - volunteersNeeded
+        - status
+        - coordinatorName
+        - createdAt
+
+    CreateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        requiredSkills:
+          type: array
+          items:
+            type: string
+        location:
+          type: string
+          nullable: true
+        date:
+          type: string
+          nullable: true
+        duration:
+          type: integer
+          nullable: true
+        volunteersNeeded:
+          type: integer
+        coordinatorName:
+          type: string
+      required:
+        - title
+        - description
+        - requiredSkills
+        - volunteersNeeded
+        - coordinatorName
+
+    UpdateTaskStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [open, in_progress, completed, cancelled]
+      required:
+        - status
+
+    Match:
+      type: object
+      properties:
+        id:
+          type: integer
+        taskId:
+          type: integer
+        volunteerId:
+          type: integer
+        volunteerName:
+          type: string
+        taskTitle:
+          type: string
+        status:
+          type: string
+          enum: [pending, accepted, declined, completed]
+        matchScore:
+          type: integer
+          description: Match score from 0-100
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - taskId
+        - volunteerId
+        - volunteerName
+        - taskTitle
+        - status
+        - matchScore
+        - createdAt
+
+    VolunteerMatch:
+      type: object
+      properties:
+        volunteer:
+          $ref: "#/components/schemas/Volunteer"
+        matchScore:
+          type: integer
+          description: Match score from 0-100
+        matchingSkills:
+          type: array
+          items:
+            type: string
+        alreadyMatched:
+          type: boolean
+      required:
+        - volunteer
+        - matchScore
+        - matchingSkills
+        - alreadyMatched
+
+    CreateMatchRequest:
+      type: object
+      properties:
+        taskId:
+          type: integer
+        volunteerId:
+          type: integer
+      required:
+        - taskId
+        - volunteerId
+
+    ChatMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+      required:
+        - role
+        - content
+
+    ChatRequest:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+      required:
+        - messages
+
+    ChatResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        taskData:
+          $ref: "#/components/schemas/CreateTaskRequest"
+          nullable: true
+        isComplete:
+          type: boolean
+      required:
+        - message
+        - isComplete
